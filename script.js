@@ -101,43 +101,56 @@
       document.getElementById('quizContainer').classList.add('hidden');
     }
 
-    // Math functions
+// Math functions
+    
+
+
+let activeInputId = "questionInput"; // default হলো questionInput
+
+// সব input এ onfocus event লাগাই
+document.querySelectorAll("input, textarea").forEach(el => {
+  el.addEventListener("focus", () => {
+    activeInputId = el.id;
+  });
+});
+
     function insertMathSymbol(mathCode) {
-      const questionInput = document.getElementById('questionInput');
-      const start = questionInput.selectionStart;
-      const end = questionInput.selectionEnd;
-      const text = questionInput.value;
+      const activeInput = document.getElementById(activeInputId);
+      const start = activeInput.selectionStart;
+      const end = activeInput.selectionEnd;
+      const text = activeInput.value;
 
       const before = text.substring(0, start);
       const after = text.substring(end, text.length);
 
-      questionInput.value = before + mathCode + after;
+      activeInput.value = before + mathCode + after;
 
       // Position cursor
       const newPos = start + mathCode.length;
-      questionInput.setSelectionRange(newPos, newPos);
-      questionInput.focus();
+      activeInput.setSelectionRange(newPos, newPos);
+      activeInput.focus();
 
       updateQuestionPreview();
-    }
+}
+    
+function updateQuestionPreview() {
+  const input = document.getElementById('questionInput').value;
+  const output = document.getElementById('questionPreview');
 
-    function updateQuestionPreview() {
-      const input = document.getElementById('questionInput').value;
-      const preview = document.getElementById('questionPreview');
-
-      if (input.trim()) {
-        preview.innerHTML = input;
-        // Render math with better error handling
-        setTimeout(() => {
-          if (window.MathJax) {
-            MathJax.typesetPromise([preview])
-              .catch((err) => console.log('Preview render error:', err));
-          }
-        }, 100);
+  if (input.trim()) {
+        try {
+          katex.render(input, output, {
+            throwOnError: false
+          });
+        } catch (err) {
+          output.innerHTML = "❌ Invalid LaTeX";
+        }
       } else {
-        preview.innerHTML = 'Type your question to see preview...';
+        output.innerHTML = "Type something above...";
       }
-    }
+}
+
+
 
     // Teacher functions
     function setCorrectAnswer(index) {
@@ -155,7 +168,25 @@
 
       const choices = ['A', 'B', 'C', 'D'];
       document.getElementById('correctIndicator').textContent = `✅ Correct Answer: ${choices[index]}`;
+}
+    
+//renderchoices function
+
+function renderChoice(num) {
+  const input = document.getElementById(`choice${num}`).value;
+  const preview = document.getElementById(`choicePreview${num}`);
+
+  if (input.trim()) {
+    try {
+      katex.render(input, preview, { throwOnError: false });
+    } catch (err) {
+      preview.innerHTML = "❌ Invalid LaTeX";
     }
+  } else {
+    preview.innerHTML = "";
+  }
+}
+
 
     function addQuestion() {
       const questionText = document.getElementById('questionInput').value.trim();

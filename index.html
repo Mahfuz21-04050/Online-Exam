@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Advanced Quiz System - Teacher & Student</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -107,6 +108,7 @@
           <div class="choices-grid">
             <div class="choice-input">
               <input type="text" id="choice1" class="form-input" placeholder="Choice A (e.g., $\frac{1}{2}$)">
+
               <div class="correct-marker inactive" onclick="setCorrectAnswer(0)">A</div>
             </div>
             <div class="choice-input">
