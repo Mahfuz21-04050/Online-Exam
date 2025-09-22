@@ -303,20 +303,27 @@ function renderChoice(num) {
       quizQuestions.forEach((q, index) => {
         const choices = ['A', 'B', 'C', 'D'];
         const mathIndicator = q.hasMath ? '🧮 ' : '📝 ';
+        const questionPreview = q.hasMath 
+      ? `<span class="math">${q.question}</span>` 
+      : q.question;
         html += `
-      < div class= "question-item" >
+             <div class= "question-item">
                         <div class="question-text-preview">
-                            ${mathIndicator}Q${index + 1}: ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}
+                            ${mathIndicator}Q${index + 1}: ${questionPreview.substring(0, 80)}${questionPreview.length > 80 ? '...' : ''}
                         </div>
                         <div class="question-meta">
                             Correct Answer: ${choices[q.correct]} | ${q.hasMath ? 'Contains Math' : 'Text Only'}
                             <button onclick="removeQuestion(${index})" style="float: right; background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">Remove</button>
                         </div>
-                    </div >
+                    </div>
       `;
       });
 
       listEl.innerHTML = html;
+
+       listEl.querySelectorAll(".math").forEach(el => {
+    katex.render(el.textContent, el, { throwOnError: false });
+  });
     }
 
     function removeQuestion(index) {
@@ -442,14 +449,14 @@ function renderChoice(num) {
       const choicesContainer = document.getElementById('choicesContainer');
 
       // Set question text
-      questionElement.innerHTML = question.question;
+      questionElement.innerHTML = katex.renderToString(question.question);
 
       // Clear and recreate choice buttons
       choicesContainer.innerHTML = '';
       question.choices.forEach((choice, index) => {
         const choiceButton = document.createElement('button');
         choiceButton.className = 'choice-option';
-        choiceButton.innerHTML = `${String.fromCharCode(65 + index)}. ${choice}`;
+        choiceButton.innerHTML = `${String.fromCharCode(65 + index)}. ${katex.renderToString(choice)}`;
         choiceButton.onclick = () => selectAnswer(index);
         choicesContainer.appendChild(choiceButton);
       });
