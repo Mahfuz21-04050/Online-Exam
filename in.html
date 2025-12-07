@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student & Teacher Auth</title>
+  <!-- Firebase CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
+  <style>
+    #studentDashboard,
+    #teacherDashboard {
+      display: none;
+    }
+
+    input,
+    select {
+      margin: 5px 0;
+      padding: 8px;
+      width: 200px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 5px 0;
+    }
+
+    h2 {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Signup</h2>
+  <input type="email" id="signupEmail" placeholder="Email"><br>
+  <input type="password" id="signupPassword" placeholder="Password"><br>
+  <select id="roleSelect">
+    <option value="student">Student</option>
+    <option value="teacher">Teacher</option>
+  </select><br>
+  <button id="signupBtn">Sign Up</button>
+
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email"><br>
+  <input type="password" id="loginPassword" placeholder="Password"><br>
+  <button id="loginBtn">Login</button>
+
+  <div id="studentDiv">
+    <h2>Welcome Student 🎓</h2>
+    <button id="logoutBtn1">Logout</button>
+  </div>
+
+  <div id="teacherDiv">
+    <h2>Welcome Teacher 👨‍🏫</h2>
+    <button id="logoutBtn2">Logout</button>
+  </div>
+
+  <script>
+    // তোমার Firebase config বসাও
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrjs2DsRDXTMqchm_fMXE_5ID14-JaZc0",
+      authDomain: "online-exam-app-21e2c.firebaseapp.com",
+      projectId: "online-exam-app-21e2c",
+      storageBucket: "online-exam-app-21e2c.firebasestorage.app",
+      messagingSenderId: "381220508651",
+      appId: "1:381220508651:web:520a7f02bad008f42f7fae",
+      measurementId: "G-RFL3WQBL4Z"
+    };
+
+    // Firebase initialize
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const signupBtn = document.getElementById("signupBtn");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn1 = document.getElementById("logoutBtn1");
+    const logoutBtn2 = document.getElementById("logoutBtn2");
+
+    const studentDiv = document.getElementById("studentDashboard");
+    const teacherDiv = document.getElementById("teacherDashboard");
+
+    // Signup with role
+    signupBtn.addEventListener("click", () => {
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+      const role = document.getElementById("roleSelect").value;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          // Firestore-এ role সেভ করা
+          return db.collection("users").doc(user.uid).set({
+            email: email,
+            role: role
+          });
+        })
+        .then(() => {
+          alert("Signup Successful ✅");
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    });
+
+    // Login
+    loginBtn.addEventListener("click", () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          alert("Login Successful ✅");
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    });
+
+    // Logout
+    logoutBtn1.addEventListener("click", () => {
+      auth.signOut();
+    });
+    logoutBtn2.addEventListener("click", () => {
+      auth.signOut();
+    });
+
+    // Auth state change
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Firestore থেকে role আনো
+        db.collection("users").doc(user.uid).get().then((doc) => {
+          if (doc.exists) {
+            const role = doc.data().role;
+            if (role === "student") {
+              studentDiv.style.display = "block";
+              teacherDiv.style.display = "none";
+            } else if (role === "teacher") {
+              teacherDiv.style.display = "block";
+              studentDiv.style.display = "none";
+            }
+          }
+        });
+      } else {
+        // Logout হলে সব লুকিয়ে ফেলো
+        studentDiv.style.display = "none";
+        teacherDiv.style.display = "none";
+      }
+    });
+  </script>
+</body>
+
+</html>

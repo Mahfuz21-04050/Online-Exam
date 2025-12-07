@@ -1,4 +1,22 @@
-// Global variables
+//firebase
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBrjs2DsRDXTMqchm_fMXE_5ID14-JaZc0",
+  authDomain: "online-exam-app-21e2c.firebaseapp.com",
+  projectId: "online-exam-app-21e2c",
+  storageBucket: "online-exam-app-21e2c.firebasestorage.app",
+  messagingSenderId: "381220508651",
+  appId: "1:381220508651:web:520a7f02bad008f42f7fae",
+  measurementId: "G-RFL3WQBL4Z"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+
+
+//Global variables
     let currentMode = 'landing'; // landing, teacher, student, quiz
     let quizQuestions = [];
     let sampleQuestions = [
@@ -40,38 +58,33 @@
     let isPreviewMode = false;
     let currentQuizType = '';
 
-    // MathJax configuration - FIXED
-    window.MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']],
-        displayMath: [['$$', '$$']],
-        processEscapes: true,
-        processEnvironments: true
-      },
-      options: {
-        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-        renderActions: {
-          addMenu: [0, '', '']
-        }
-      },
-      startup: {
-        pageReady: () => {
-          return MathJax.startup.defaultPageReady().then(() => {
-            console.log('MathJax is ready');
-          });
-        }
-      }
-    };
-
+   
 
     // Initialize the application
-    function init() {
+function init() {
+      setupAuthStateListener();
       updateTeacherStats();
       updateStudentStats();
 
       // Add event listeners for real-time preview
       document.getElementById('questionInput').addEventListener('input', updateQuestionPreview);
+}
+    
+// Firebase Authentication Functions
+function setupAuthStateListener() {
+  auth.onAuthStateChanged((user) => {
+    currentUser = user;
+    if (user) {
+      // User is signed in
+      console.log('User signed in:', user.email);
+      updateUIForUser(user);
+    } else {
+      // User is signed out
+      console.log('User signed out');
+      showLandingPage();
     }
+  });
+}
 
     // Navigation functions
     function showLandingPage() {
@@ -112,6 +125,7 @@ document.querySelectorAll("input, textarea").forEach(el => {
   el.addEventListener("focus", () => {
     activeInputId = el.id;
   });
+  
 });
 
     function insertMathSymbol(mathCode) {
@@ -132,23 +146,47 @@ document.querySelectorAll("input, textarea").forEach(el => {
 
       updateQuestionPreview();
 }
-    
-function updateQuestionPreview() {
-  const input = document.getElementById('questionInput').value;
-  const output = document.getElementById('questionPreview');
 
-  if (input.trim()) {
-        try {
-          katex.render(input, output, {
-            throwOnError: false
-          });
-        } catch (err) {
-          output.innerHTML = "❌ Invalid LaTeX";
-        }
-      } else {
-        output.innerHTML = "Type something above...";
+// সব input-এ live preview চালু
+document.querySelectorAll('#questionInput, #choice1, #choice2, #choice3, #choice4')
+  .forEach(el => el.addEventListener("input", updateQuestionPreview));
+
+// সব input-এ live preview চালু
+document.querySelectorAll('#questionInput, #choice1, #choice2, #choice3, #choice4')
+  .forEach(el => el.addEventListener("input", updateQuestionPreview));
+
+
+  function updateQuestionPreview() {
+  const inputs = document.querySelectorAll('#questionInput,#choice1,#choice2,#choice3,#choice4');
+  const outputs = document.querySelectorAll('#questionPreview,#choice1Preview,#choice2Preview,#choice3Preview,#choice4Preview');
+
+    inputs.forEach((inp, index) => {
+      const value = inp.value;
+      const out = outputs[index];
+
+      if (!value.trim()) {
+        out.innerHTML = "Type something above...";
+        return;
       }
+      try {
+        out.innerHTML = autoWrapMath(value);
+        renderMathInElement(out, {
+          delimiters: [
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true },
+            { left: "$", right: "$", display: false }
+          ]
+        });
+      } catch {
+        out.innerHTML = "❌ Invalid LaTeX";
+      }
+
+    });
 }
+
+
+    
+
 
 
 
@@ -322,8 +360,17 @@ function renderChoice(num) {
       listEl.innerHTML = html;
 
        listEl.querySelectorAll(".math").forEach(el => {
-    katex.render(el.textContent, el, { throwOnError: false });
+         //katex.render(el.textContent, el, { throwOnError: false });
+         el.innerHTML =autoWrapMath(el.textContent);
+         renderMathInElement(el, {
+    delimiters: [
+        {left: "\\(", right: "\\)", display: false},
+             { left: "\\[", right: "\\]", display: true },
+             { left: "$", right: "$", display: false },
+             { left: "\\begin{", right: "\\end{", display: true }
+    ]
   });
+    });
     }
 
     function removeQuestion(index) {
@@ -353,33 +400,47 @@ function renderChoice(num) {
       startQuiz('teacher-quiz', true);
     }
 
-    function exportQuiz() {
-      if (quizQuestions.length === 0) {
-        alert('⚠️ No questions to export!');
-        return;
-      }
+   async function exportQuizPDF() {
+  if (quizQuestions.length === 0) {
+    alert('⚠️ No questions to export!');
+    return;
+  }
 
-      const dataStr = JSON.stringify(quizQuestions, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-      const exportFileDefaultName = 'quiz_questions.json';
+  let y = 20; // vertical position
 
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
+  doc.setFontSize(16);
+  doc.text("Exam Question Paper", 20, y);
+  y += 10;
+
+  doc.setFontSize(12);
+
+  quizQuestions.forEach((q, index) => {
+    // Question title
+    doc.text(`${index + 1}. ${q.question}`, 20, y);
+    y += 8;
+
+    // Choices
+    const choices = ["A", "B", "C", "D"];
+    q.choices.forEach((opt, i) => {
+      doc.text(`   ${choices[i]}. ${opt}`, 25, y);
+      y += 7;
+    });
+
+    y += 5; // extra gap after each question
+
+    // Auto new page if needed
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
     }
+  });
 
-    function clearAllQuestions() {
-      if (quizQuestions.length === 0) return;
-
-      if (confirm('⚠️ Are you sure you want to clear all questions? This action cannot be undone.')) {
-        quizQuestions = [];
-        updateTeacherStats();
-        updateQuestionsList();
-        alert('✅ All questions cleared!');
-      }
-    }
+  // Download
+  doc.save("exam_questions.pdf");
+}
 
     // Student functions
     function updateStudentStats() {
@@ -430,7 +491,7 @@ function renderChoice(num) {
       loadQuestion();
       updateProgress();
       updateScore();
-      if (!preview) startTimer();
+      if (!isPreviewMode) startTimer();
     }
 
     function loadQuestion() {
@@ -441,7 +502,20 @@ function renderChoice(num) {
 
       const question = window.currentQuizQuestions[currentQuestionIndex];
       loadSingleQuestion(question);
-    }
+}
+    
+// auto wrap math rendering function
+
+function autoWrapMath(text) {
+    // return text.replace(/\\[a-zA-Z]+(\{[^}]+\})?/g, (match) => {
+    //     return `\\(${match}\\)`;  // inline math wrapper
+  // });
+  
+  return text.replace(/\\[a-zA-Z]+(\{[^}]*\})?/g, (match) => {
+        return katex.renderToString(match, { throwOnError: false });
+    });
+}
+
 
     // Improved loadSingleQuestion function
     function loadSingleQuestion(question) {
@@ -449,7 +523,22 @@ function renderChoice(num) {
       const choicesContainer = document.getElementById('choicesContainer');
 
       // Set question text
-      questionElement.innerHTML = katex.renderToString(question.question);
+      
+      questionElement.innerHTML = autoWrapMath(question.question);
+
+         renderMathInElement(questionElement, {
+    delimiters: [
+        {left: "\\(", right: "\\)", display: false},
+             { left: "\\[", right: "\\]", display: true },
+             { left: "$", right: "$", display: false }
+            
+
+        
+    ]
+});
+
+      
+      
 
       // Clear and recreate choice buttons
       choicesContainer.innerHTML = '';

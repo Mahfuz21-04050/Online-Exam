@@ -5,12 +5,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Advanced Quiz System - Teacher & Student</title>
+  <!-- KaTeX CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+  <!-- KaTeX JS -->
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <!-- KaTeX auto-render extension -->
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+
+  <!-- pdfmake-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <link rel="stylesheet" href="styles.css">
+  <!-- Firebase CDN links - head tag-এর মধ্যে যোগ করুন -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 
 <body>
+
   <div class="floating-elements"></div>
 
   <!-- Landing Page -->
@@ -66,7 +82,7 @@
           <div class="math-toolbar">
             <div class="math-toolbar-title">Quick Math Symbols - Click to insert:</div>
             <div class="math-buttons">
-              <button class="math-btn" onclick="insertMathSymbol('\\frac{}{}')" title="Fraction">½</button>
+              <button class="math-btn" onclick="insertMathSymbol('\\\\frac{}{}')" title="Fraction">½</button>
               <button class="math-btn" onclick="insertMathSymbol('^{}')" title="Superscript">x²</button>
               <button class="math-btn" onclick="insertMathSymbol('_{}')" title="Subscript">x₁</button>
               <button class="math-btn" onclick="insertMathSymbol('\\sqrt{}')" title="Square Root">√</button>
@@ -100,6 +116,10 @@
             <div style="font-weight: 600; color: #4a5568; margin-bottom: 8px;">Preview:</div>
             <div id="questionPreview" style="font-size: 1.1rem; line-height: 1.6;">Type your question to see preview...
             </div>
+            <div id="choice1Preview" style="font-size: 1.1rem; line-height: 1.6; margin-top: 5px;"></div>
+            <div id="choice2Preview" style="font-size: 1.1rem; line-height: 1.6; margin-top: 5px;"></div>
+            <div id="choice3Preview" style="font-size: 1.1rem; line-height: 1.6; margin-top: 5px;"></div>
+            <div id="choice4Preview" style="font-size: 1.1rem; line-height: 1.6; margin-top: 5px;"></div>
           </div>
         </div>
 
@@ -163,7 +183,7 @@
         <div class="action-buttons">
           <button class="btn btn-teacher" onclick="publishQuiz()">🚀 Publish Quiz</button>
           <button class="btn btn-primary" onclick="previewQuiz()">👁️ Preview Quiz</button>
-          <button class="btn btn-warning" onclick="exportQuiz()">💾 Export Quiz</button>
+          <button class="btn btn-warning" onclick="exportQuizPDF()">Download Exam PDF</button>
           <button class="btn btn-danger" onclick="clearAllQuestions()">🗑️ Clear All</button>
         </div>
       </div>
